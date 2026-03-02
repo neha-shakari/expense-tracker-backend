@@ -20,6 +20,16 @@ public class ExpenseController {
         return expenseRepository.findAll();
     }
 
+    @GetMapping("/{id}")
+    public Expense getExpenseById(@PathVariable Long id) {
+        return expenseRepository.findById(id)
+                .orElseThrow(() ->
+                        new org.springframework.web.server.ResponseStatusException(
+                                org.springframework.http.HttpStatus.NOT_FOUND,
+                                "Expense not found"
+                        ));
+    }
+
     @PostMapping
     public Expense addExpense( @Valid @RequestBody Expense expense) {
         return expenseRepository.save(expense);
@@ -30,16 +40,26 @@ public class ExpenseController {
                                   @Valid @RequestBody Expense updatedExpense) {
 
         Expense expense = expenseRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Expense not found"));
-
-        expense.setTitle(updatedExpense.getTitle());
-        expense.setAmount(updatedExpense.getAmount());
+                .orElseThrow(() ->
+                        new org.springframework.web.server.ResponseStatusException(
+                                org.springframework.http.HttpStatus.NOT_FOUND,
+                                "Expense not found"
+                        ));
 
         return expenseRepository.save(expense);
     }
 
     @DeleteMapping("/{id}")
     public void deleteExpense(@PathVariable Long id) {
-        expenseRepository.deleteById(id);
+
+        Expense expense = expenseRepository.findById(id)
+                .orElseThrow(() ->
+                        new org.springframework.web.server.ResponseStatusException(
+                                org.springframework.http.HttpStatus.NOT_FOUND,
+                                "Expense not found"
+                        ));
+
+        expenseRepository.delete(expense);
     }
+
 }
