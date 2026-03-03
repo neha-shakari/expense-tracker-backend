@@ -1,6 +1,8 @@
 package com.neha.expensetracker;
 
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import jakarta.validation.Valid;
 
 import java.util.List;
@@ -24,27 +26,31 @@ public class ExpenseController {
     public Expense getExpenseById(@PathVariable Long id) {
         return expenseRepository.findById(id)
                 .orElseThrow(() ->
-                        new org.springframework.web.server.ResponseStatusException(
-                                org.springframework.http.HttpStatus.NOT_FOUND,
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
                                 "Expense not found"
                         ));
     }
 
     @PostMapping
-    public Expense addExpense( @Valid @RequestBody Expense expense) {
+    public Expense addExpense(@Valid @RequestBody Expense expense) {
         return expenseRepository.save(expense);
     }
 
     @PutMapping("/{id}")
     public Expense updateExpense(@PathVariable Long id,
-                                  @Valid @RequestBody Expense updatedExpense) {
+                                 @Valid @RequestBody Expense updatedExpense) {
 
         Expense expense = expenseRepository.findById(id)
                 .orElseThrow(() ->
-                        new org.springframework.web.server.ResponseStatusException(
-                                org.springframework.http.HttpStatus.NOT_FOUND,
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
                                 "Expense not found"
                         ));
+
+        // ✅ FIX: actually update the fields before saving
+        expense.setTitle(updatedExpense.getTitle());
+        expense.setAmount(updatedExpense.getAmount());
 
         return expenseRepository.save(expense);
     }
@@ -54,12 +60,11 @@ public class ExpenseController {
 
         Expense expense = expenseRepository.findById(id)
                 .orElseThrow(() ->
-                        new org.springframework.web.server.ResponseStatusException(
-                                org.springframework.http.HttpStatus.NOT_FOUND,
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
                                 "Expense not found"
                         ));
 
         expenseRepository.delete(expense);
     }
-
 }
