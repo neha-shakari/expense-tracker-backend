@@ -1,9 +1,10 @@
 package com.neha.expensetracker;
 
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
-import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -12,28 +13,51 @@ import java.util.List;
 public class ExpenseController {
 
     private final ExpenseRepository expenseRepository;
+    private final UserRepository userRepository;
 
-    public ExpenseController(ExpenseRepository expenseRepository) {
+    public ExpenseController(ExpenseRepository expenseRepository,
+                             UserRepository userRepository) {
         this.expenseRepository = expenseRepository;
+        this.userRepository = userRepository;
+    }
+
+    // gets the username from the JWT token
+    private String getCurrentUsername() {
+        return SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
+    }
+
+    // gets the full User object from database
+    private User getCurrentUser() {
+        return userRepository.findByUsername(getCurrentUsername())
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.UNAUTHORIZED));
     }
 
     @GetMapping
     public List<Expense> getAllExpenses() {
-        return expenseRepository.findAll();
+        return expenseRepository.findByUserUsername(getCurrentUsername());
     }
 
     @GetMapping("/{id}")
     public Expense getExpenseById(@PathVariable Long id) {
-        return expenseRepository.findById(id)
+        Expense expense = expenseRepository.findById(id)
                 .orElseThrow(() ->
                         new ResponseStatusException(
-                                HttpStatus.NOT_FOUND,
-                                "Expense not found"
-                        ));
+                                HttpStatus.NOT_FOUND, "Expense not found"));
+
+        if (!expense.getUser().getUsername().equals(getCurrentUsername())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        return expense;
     }
 
     @PostMapping
     public Expense addExpense(@Valid @RequestBody Expense expense) {
+        expense.setUser(getCurrentUser());
         return expenseRepository.save(expense);
     }
 
@@ -44,26 +68,27 @@ public class ExpenseController {
         Expense expense = expenseRepository.findById(id)
                 .orElseThrow(() ->
                         new ResponseStatusException(
-                                HttpStatus.NOT_FOUND,
-                                "Expense not found"
-                        ));
+                                HttpStatus.NOT_FOUND, "Expense not found"));
 
-        // ✅ FIX: actually update the fields before saving
+        if (!expense.getUser().getUsername().equals(getCurrentUsername())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
         expense.setTitle(updatedExpense.getTitle());
         expense.setAmount(updatedExpense.getAmount());
-
         return expenseRepository.save(expense);
     }
 
     @DeleteMapping("/{id}")
     public void deleteExpense(@PathVariable Long id) {
-
         Expense expense = expenseRepository.findById(id)
                 .orElseThrow(() ->
                         new ResponseStatusException(
-                                HttpStatus.NOT_FOUND,
-                                "Expense not found"
-                        ));
+                                HttpStatus.NOT_FOUND, "Expense not found"));
+
+        if (!expense.getUser().getUsername().equals(getCurrentUsername())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
 
         expenseRepository.delete(expense);
     }
