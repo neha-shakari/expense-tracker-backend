@@ -1,6 +1,7 @@
 package com.neha.expensetracker;
 
 import jakarta.validation.Valid;
+import java.time.LocalDate;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -38,15 +39,34 @@ public class ExpenseController {
 
     @GetMapping
     public List<Expense> getAllExpenses(
-            @RequestParam(required = false) Category category) {
+            @RequestParam(required = false) Category category,
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Integer year) {
 
         String username = getCurrentUsername();
 
-        if (category != null) {
+        // both category and date filter
+        if (category != null && month != null && year != null) {
             return expenseRepository
-                    .findByUserUsernameAndCategory(username, category);
+                    .findByUsernameAndCategoryAndMonthAndYear(
+                            username, category, month, year);
         }
 
+        // only date filter
+        if (month != null && year != null) {
+            return expenseRepository
+                    .findByUsernameAndMonthAndYear(
+                            username, month, year);
+        }
+
+        // only category filter
+        if (category != null) {
+            return expenseRepository
+                    .findByUsernameAndCategoryAndMonthAndYear(
+                            username, category, month, year);
+        }
+
+        // no filter → return all
         return expenseRepository.findByUserUsername(username);
     }
 
@@ -67,6 +87,12 @@ public class ExpenseController {
     @PostMapping
     public Expense addExpense(@Valid @RequestBody Expense expense) {
         expense.setUser(getCurrentUser());
+
+        // auto set date to today if not provided
+        if (expense.getDate() == null) {
+            expense.setDate(LocalDate.now());
+        }
+
         return expenseRepository.save(expense);
     }
 

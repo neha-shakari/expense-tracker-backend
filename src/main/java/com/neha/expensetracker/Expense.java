@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.time.LocalDate;
 
 @Entity
 @Data
@@ -26,6 +27,8 @@ public class Expense {
     @Enumerated(EnumType.STRING)
     @NotNull(message = "Category cannot be empty")
     private Category category;
+
+    private LocalDate date;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
