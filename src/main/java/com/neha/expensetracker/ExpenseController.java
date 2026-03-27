@@ -37,8 +37,17 @@ public class ExpenseController {
     }
 
     @GetMapping
-    public List<Expense> getAllExpenses() {
-        return expenseRepository.findByUserUsername(getCurrentUsername());
+    public List<Expense> getAllExpenses(
+            @RequestParam(required = false) Category category) {
+
+        String username = getCurrentUsername();
+
+        if (category != null) {
+            return expenseRepository
+                    .findByUserUsernameAndCategory(username, category);
+        }
+
+        return expenseRepository.findByUserUsername(username);
     }
 
     @GetMapping("/{id}")
