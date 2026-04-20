@@ -22,7 +22,6 @@ public class ExpenseController {
         this.userRepository = userRepository;
     }
 
-    // gets the username from the JWT token
     private String getCurrentUsername() {
         return SecurityContextHolder
                 .getContext()
@@ -30,7 +29,6 @@ public class ExpenseController {
                 .getName();
     }
 
-    // gets the full User object from database
     private User getCurrentUser() {
         return userRepository.findByUsername(getCurrentUsername())
                 .orElseThrow(() ->
@@ -62,8 +60,7 @@ public class ExpenseController {
         // only category filter
         if (category != null) {
             return expenseRepository
-                    .findByUsernameAndCategoryAndMonthAndYear(
-                            username, category, month, year);
+                    .findByUserUsernameAndCategory(username, category);
         }
 
         // no filter → return all
@@ -88,7 +85,6 @@ public class ExpenseController {
     public Expense addExpense(@Valid @RequestBody Expense expense) {
         expense.setUser(getCurrentUser());
 
-        // auto set date to today if not provided
         if (expense.getDate() == null) {
             expense.setDate(LocalDate.now());
         }
